@@ -1,0 +1,90 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+-- Criação da GUI
+local screenGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+local frame = Instance.new("Frame", screenGui)
+frame.Size = UDim2.new(0, 300, 0, 400)
+frame.Position = UDim2.new(0, 10, 0, 10)
+frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+frame.Visible = true
+
+-- Botão fechar
+local closeButton = Instance.new("TextButton", frame)
+closeButton.Size = UDim2.new(0, 50, 0, 30)
+closeButton.Position = UDim2.new(1, -55, 0, 5)
+closeButton.Text = "X"
+closeButton.MouseButton1Click:Connect(function()
+    frame.Visible = false
+end)
+
+-- Botão ocultar
+local hideButton = Instance.new("TextButton", frame)
+hideButton.Size = UDim2.new(0, 70, 0, 30)
+hideButton.Position = UDim2.new(1, -130, 0, 5)
+hideButton.Text = "Ocultar"
+local isHidden = false
+hideButton.MouseButton1Click:Connect(function()
+    isHidden = not isHidden
+    frame.Visible = not isHidden
+end)
+
+-- Exemplo simples ESP
+local function enableESP()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            player.CharacterAdded:Connect(function(character)
+                local head = character:WaitForChild("Head")
+                local espBillboard = Instance.new("BillboardGui", head)
+                espBillboard.Size = UDim2.new(0, 100, 0, 40)
+                espBillboard.Adornee = head
+                espBillboard.AlwaysOnTop = true
+
+                local nameLabel = Instance.new("TextLabel", espBillboard)
+                nameLabel.Size = UDim2.new(1, 0, 1, 0)
+                nameLabel.BackgroundTransparency = 1
+                nameLabel.TextColor3 = Color3.new(1, 0, 0)
+                nameLabel.Text = player.Name
+                nameLabel.TextScaled = true
+            end)
+        end
+    end
+end
+
+enableESP()
+
+-- Exemplo básico de Aimbot (trava no alvo mais próximo ao mouse)
+local aimbotEnabled = false
+local aimlockEnabled = false
+
+local function getClosestPlayer()
+    local target
+    local shortestDistance = math.huge
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            local screenPoint, onScreen = workspace.CurrentCamera:WorldToScreenPoint(player.Character.Head.Position)
+            if onScreen then
+                local distance = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(screenPoint.X, screenPoint.Y)).Magnitude
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    target = player
+                end
+            end
+        end
+    end
+    return target
+end
+
+Mouse.Button2Down:Connect(function() -- Botão direito do mouse ativa/desativa aimbot
+    aimbotEnabled = not aimbotEnabled
+    if aimbotEnabled then
+        while aimbotEnabled do
+            local target = getClosestPlayer()
+            if target and target.Character and target.Character:FindFirstChild("Head") then
+                workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, target.Character.Head.Position)
+            end
+            wait(0.01)
+        end
+    end
+end)
